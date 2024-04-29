@@ -106,12 +106,11 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
   };
 
   const onEnterPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-
     if (e.key == "Enter" && e.shiftKey == false) {
       e.preventDefault();
       // myFormRef.requestSubmit();
       // msgInputID.
-      console.log('Enter key pressed!');
+      console.log("Enter key pressed!");
       fff();
     }
   };
