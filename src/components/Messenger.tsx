@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { msgType, typingObjType, userType } from "../types/types";
 import { Socket } from "socket.io-client";
 import dayjs from "dayjs";
@@ -20,7 +20,10 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
   const [isTypingObj, setIsTypingObj] = useState<any>(null);
   const [onlineUsers, setOnlineUsers] = useState<userType[]>([]);
   const [joinError, setJoinError] = useState("");
+  const [loading, setIsLoading] = useState(false);
   const username_inputRef = useRef<HTMLElement>(null);
+  // const msgInputID = useId();
+  // const myFormRef = useRef(null);
 
   // console.log("onlineUsers: ", JSON.stringify(onlineUsers));
 
@@ -66,19 +69,30 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
         prev.filter((user) => user.clientId !== returnObj.clientId)
       );
     });
+
+    socket.on("connect_error", (error) => {
+      console.log(error.message);
+      setJoinError("connection error!");
+      setIsLoading(false);
+    });
   }, []);
 
   // useEffect(() => {
   //   console.log("onlineUsers: ", JSON.stringify(onlineUsers));
   // }, [onlineUsers]);
 
-  const sendMsgFn = (e: React.MouseEvent<HTMLElement>) => {
+  const sendMsgFn = (
+    e: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>
+  ) => {
     e.preventDefault();
 
+    fff();
+  };
+
+  const fff = () => {
     if (msg.trim() == "") {
       return;
     }
-
     // prepare msg obj
     const msgObj = {
       clientId: socket.id,
@@ -91,29 +105,25 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
     });
   };
 
-  const submitMsgFn = (e: React.FormEvent<HTMLElement>) => {
-    e.preventDefault();
+  const onEnterPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
 
-    if (msg.trim() == "") {
-      return;
+    if (e.key == "Enter" && e.shiftKey == false) {
+      e.preventDefault();
+      // myFormRef.requestSubmit();
+      // msgInputID.
+      console.log('Enter key pressed!');
+      fff();
     }
-
-    // prepare msg obj
-    const msgObj = {
-      clientId: socket.id,
-      content: msg.trim(),
-      dateTime: new Date(),
-    };
-    // send msg to server
-    socket.emit("createMessage", msgObj, () => {
-      setMsg("");
-    });
   };
 
-  const joinFn = (e: React.MouseEvent<HTMLElement>) => {
+  const joinFn = (
+    e: React.MouseEvent<HTMLElement> | React.FormEvent<HTMLElement>
+  ) => {
     console.log("calling joinFn");
 
     e.preventDefault();
+
+    setJoinError("");
 
     if (userName.trim().length < 1) {
       let msg = "Your name cant be empty!";
@@ -141,6 +151,8 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
       socket.connect();
     }
 
+    setIsLoading(true);
+
     socket.emit("join", { name: userName }, (returnObj: returnObjType) => {
       if (returnObj.status == 200) {
         setOnlineUsers(returnObj.data!.users);
@@ -153,6 +165,7 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
           username_inputRef.current.focus();
         }
       }
+      setIsLoading(false);
     });
   };
 
@@ -182,7 +195,7 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
     <>
       {/* <h1>Messenger</h1> */}
       {!joined ? (
-        <div className="joinCont">
+        <form onSubmit={joinFn} className="joinCont">
           <label>Please enter your name</label>
           <input
             type="text"
@@ -195,10 +208,14 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
               <pre>{joinError}</pre>
             </div>
           )}
-          <button onClick={joinFn} style={{ marginTop: "10px" }}>
-            Send
+          <button
+            onClick={joinFn}
+            style={{ marginTop: "10px" }}
+            disabled={loading}
+          >
+            {loading ? "loading.." : "Send"}
           </button>
-        </div>
+        </form>
       ) : (
         <div className="messengerContainer">
           <div className="loggedInUserCont">
@@ -214,15 +231,21 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
                 {messages.map((m, i) => (
                   <div
                     key={i}
-                    className={m.userName.toLowerCase() == userName.toLowerCase() ? "ownMsgDiv" : ""}
+                    className={
+                      m.userName.toLowerCase() == userName.toLowerCase()
+                        ? "ownMsgDiv"
+                        : ""
+                    }
                   >
                     <div
                       className={`msgCont ${
-                        m.userName.toLowerCase() == userName.toLowerCase() ? "ownMsgBGColor" : ""
+                        m.userName.toLowerCase() == userName.toLowerCase()
+                          ? "ownMsgBGColor"
+                          : ""
                       }`}
                       key={i}
                     >
-                      <h5>{capitalizeFirstLetter( m.userName)}</h5>
+                      <h5>{capitalizeFirstLetter(m.userName)}</h5>
                       <p>{m.content}</p>
                       <div className="msgDateTimeCont">
                         {dayjs(m.dateTime).format("hh:mm A")}
@@ -238,10 +261,17 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
               </div>
             )} */}
             <div className="sendMsgCont">
-              <div className="inputAndSendBtn">
+              <form
+                className="inputAndSendBtn"
+                // onSubmit={sendMsgFn}
+                // id={msgInputID}
+                // ref={el => myFormRef = el}
+              >
                 <textarea
-                  name=""
-                  id=""
+                  // type="textarea"
+                  // name="textValue"
+
+                  // id={msgInputID}
                   rows={3}
                   onChange={(e) => {
                     setMsg(e.target.value);
@@ -249,10 +279,10 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
                   }}
                   value={msg}
                   style={{ flex: 1 }}
-                  onSubmit={submitMsgFn}
+                  onKeyDown={onEnterPress}
                 ></textarea>
                 <button onClick={sendMsgFn}>SEND</button>
-              </div>
+              </form>
             </div>
           </div>
           <div className="onlineUsersCont">

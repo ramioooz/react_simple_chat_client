@@ -2,7 +2,8 @@ import { createContext } from "react";
 
 import { Socket, io } from "socket.io-client";
 
-export const socketIO = io("http://localhost:3000", { autoConnect: false});
+// export const socketIO = io("http://localhost:3000", { autoConnect: false});
+export const socketIO = io(import.meta.env.VITE_SERVERURL, { autoConnect: false});
 
 export const SocketContext = createContext<Socket>(socketIO);
 
