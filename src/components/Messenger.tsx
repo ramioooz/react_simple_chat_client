@@ -21,7 +21,7 @@ export const Messenger: React.FC<componentPropsType> = ({ socket }) => {
   const [onlineUsers, setOnlineUsers] = useState<userType[]>([]);
   const [joinError, setJoinError] = useState("");
   const [loading, setIsLoading] = useState(false);
-  const username_inputRef = useRef<HTMLElement>(null);
+  const username_inputRef = useRef<HTMLInputElement>(null);
   // const msgInputID = useId();
   // const myFormRef = useRef(null);
 
